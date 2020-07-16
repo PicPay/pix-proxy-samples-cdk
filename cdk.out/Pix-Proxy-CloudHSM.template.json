@@ -2707,7 +2707,7 @@
                 },
                 "Configuration": {
                   "Owner": "llins",
-                  "Repo": "pix",
+                  "Repo": "pix-proxy-samples",
                   "Branch": "master",
                   "OAuthToken": {
                     "Fn::Join": [
