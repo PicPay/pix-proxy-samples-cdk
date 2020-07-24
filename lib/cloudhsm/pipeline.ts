@@ -16,7 +16,7 @@ export interface PipelineProps {
 export class Pipeline extends cdk.Construct {
 
     private readonly props: PipelineProps;
-    private readonly gitHubOwner: string = 'llins';
+    private readonly gitHubOwner: string = 'aws-samples';
     private readonly gitHubRepo: string = 'pix-proxy-samples';
 
     readonly pipeline: codepipeline.Pipeline;
