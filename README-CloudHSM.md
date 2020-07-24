@@ -21,7 +21,7 @@
     4. Informe a VPC onde o CloudHSM está e, também, o CIDR da VPC do CloudHSM. O Proxy criará uma VPC com o CIDR `172.29.0.0/16`. Não poderá chocar com o CIDR da VPC do CloudHSM!
     5. É necessário criar e informar o token do GitHub para que o CodePipeline consiga realizar o download do código. [Veja aqui como criar](https://docs.github.com/en/github/authenticating-to-github/creating-a-personal-access-token). Informe as permissões: `admin:repo_hook` e `repo`.
 
-2.  Após criação completa da stack:
+2.  Após a criação completa da stack:
 
     1. Informe os parâmetros dos certificados digitais. [Veja aqui](https://github.com/aws-samples/pix-proxy-samples/blob/master/README-CloudHSM.md#aws-systems-manager-parameter-store). São os parâmetros que estavam com o valor `< IMPORT LATER >`.
     2. A comunicação com o CloudHSM é feita via VPC Peering. Um lado do Peering já foi realizado (lado do Proxy), mas é necessário atualizar o Route Table na VPC do CloudHSM.
