@@ -37,8 +37,8 @@ export class Pipeline extends cdk.Construct {
             stages: [
                 this.createSourceStage(sourceOutput),
                 this.createBuildStage(sourceOutput, containerImageBuildOutput, testContainerImageBuildOutput),
-                this.createManualApprovalStage(),
-                this.createClusterStackDeployStage(sourceOutput)
+                // this.createManualApprovalStage(),
+                // this.createClusterStackDeployStage(sourceOutput)
             ]
         });
 

@@ -27,9 +27,14 @@
     2. A comunicação com o CloudHSM é feita via VPC Peering. Um lado do Peering já foi realizado (lado do Proxy), mas é necessário atualizar o Route Table na VPC do CloudHSM.
     3. É necessário alterar o Security Group do CloudHSM para permitir a comunicação vindo da VPC do Proxy. (`Protocol: TCP`, `Port Range: 2223 - 2225`, `Source: 172.29.0.0/16`).
 
-3. Quando a Stack foi criada, um Pipeline no CodePipeline foi criado e iniciado automaticamente. Neste pipeline existe um passo manual que deve ser aprovado **APENAS** quando o passo anterior for finalizado por completo.
 
-4. Após o Pipeline finalizar com sucesso, o serviço do Proxy e do Simulador estarão disponíveis.
+3. Quando a Stack foi criada, um Pipeline no CodePipeline foi criado e iniciado automaticamente. Aguarde a finalização do Pipeline com sucesso.
+
+4. Crie uma nova Stack no CloudFormation realizando o upload do template [cdk.out/Pix-Proxy-CloudHSM-Cluster.template.json](/cdk.out/Pix-Proxy-CloudHSM-Cluster.template.json). Garanta que o passo 2 e 3 foram executados com sucesso antes de criar a Stack do Cluster!
+
+    1. Informe o nome da stack: `Pix-Proxy-CloudHSM-Cluster`
+
+5. Após a Stack do Cluster finalizar com sucesso, o serviço do Proxy e do Simulador estarão disponíveis.
 
     1. Foi criado um ALB que expõe o Proxy para o SPI na porta `9090` e para o DICT na porta `8080`.
     2. Foi criado um NLS que expões o Simulado para o SPI na porta `9191` e para o DICT na porta `8181`.
