@@ -159,7 +159,7 @@ export class Pipeline extends cdk.Construct {
                     actionName: 'ClusterSatck_Deploy',
                     stackName: 'Pix-Proxy-CloudHSM-Cluster',
                     adminPermissions: true,
-                    templatePath: input.atPath('cdk/cdk.out/Pix-Proxy-CloudHSM-Cluster.template.json')
+                    templatePath: input.atPath('cdk.out/Pix-Proxy-CloudHSM-Cluster.template.json')
                 })
             ]
         };

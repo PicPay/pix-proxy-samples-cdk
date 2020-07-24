@@ -2844,7 +2844,7 @@
                     ]
                   },
                   "ActionMode": "CREATE_UPDATE",
-                  "TemplatePath": "Artifact_Source_GitHub_Source::cdk/cdk.out/Pix-Proxy-CloudHSM-Cluster.template.json"
+                  "TemplatePath": "Artifact_Source_GitHub_Source::cdk.out/Pix-Proxy-CloudHSM-Cluster.template.json"
                 },
                 "InputArtifacts": [
                   {
