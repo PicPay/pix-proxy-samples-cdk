@@ -148,7 +148,7 @@ export class Pipeline extends cdk.Construct {
             artifacts: {
                 'base-directory': '$CODEBUILD_SRC_DIR/proxy/kms/target',
                 files: [
-                    'function.zip'
+                    'bootstrap'
                 ]
             }
         });
