@@ -2029,7 +2029,7 @@
           ]
         },
         "Source": {
-          "BuildSpec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"install\": {\n      \"runtime-versions\": {\n        \"java\": \"corretto11\"\n      },\n      \"commands\": [\n        \"java -version\",\n        \"mvn -version\",\n        \"aws --version\"\n      ]\n    },\n    \"build\": {\n      \"commands\": [\n        \"cd $CODEBUILD_SRC_DIR_kmsJce\",\n        \"mvn clean install -DskipTests\",\n        \"cd $CODEBUILD_SRC_DIR\",\n        \"mvn -f proxy/pom.xml -pl core,kms clean package -DskipTests -Pnative -Dnative-image.docker-build=true -Dquarkus.native.enable-jni=true\"\n      ]\n    }\n  },\n  \"artifacts\": {\n    \"base-directory\": \"proxy/kms/target\",\n    \"files\": [\n      \"function.zip\"\n    ]\n  }\n}",
+          "BuildSpec": "{\n  \"version\": \"0.2\",\n  \"phases\": {\n    \"install\": {\n      \"runtime-versions\": {\n        \"java\": \"corretto11\"\n      },\n      \"commands\": [\n        \"java -version\",\n        \"mvn -version\",\n        \"aws --version\"\n      ]\n    },\n    \"build\": {\n      \"commands\": [\n        \"cd $CODEBUILD_SRC_DIR_kmsJce\",\n        \"mvn clean install -DskipTests\",\n        \"cd $CODEBUILD_SRC_DIR\",\n        \"mvn -f proxy/pom.xml -pl core,kms clean package -DskipTests -Pnative -Dnative-image.docker-build=true\"\n      ]\n    }\n  },\n  \"artifacts\": {\n    \"base-directory\": \"$CODEBUILD_SRC_DIR/proxy/kms/target\",\n    \"files\": [\n      \"function.zip\"\n    ]\n  }\n}",
           "Type": "CODEPIPELINE"
         },
         "EncryptionKey": {
