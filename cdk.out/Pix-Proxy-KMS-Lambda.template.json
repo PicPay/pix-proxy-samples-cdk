@@ -135,6 +135,14 @@
           "Statement": [
             {
               "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": [
                 "secretsmanager:GetSecretValue",
                 "secretsmanager:DescribeSecret",
                 "ssm:GetParametersByPath",
@@ -308,6 +316,9 @@
         },
         "MemorySize": 1024,
         "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active"
+        },
         "VpcConfig": {
           "SecurityGroupIds": [
             {
@@ -792,6 +803,14 @@
           "Statement": [
             {
               "Action": [
+                "xray:PutTraceSegments",
+                "xray:PutTelemetryRecords"
+              ],
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": [
                 "secretsmanager:GetSecretValue",
                 "secretsmanager:DescribeSecret",
                 "ssm:GetParametersByPath",
@@ -965,6 +984,9 @@
         },
         "MemorySize": 1024,
         "Timeout": 30,
+        "TracingConfig": {
+          "Mode": "Active"
+        },
         "VpcConfig": {
           "SecurityGroupIds": [
             {
@@ -2036,7 +2058,7 @@
     },
     "ProxySpiSignatureKeyIdParameter3A820E70": {
       "Type": "AWS::SSM::Parameter::Value<String>",
-      "Default": "SignatureKeyId"
+      "Default": "/pix/proxy/kms/SignatureKeyId"
     },
     "ProxyDictAuditStreamParameterFBFFF1DC": {
       "Type": "AWS::SSM::Parameter::Value<String>",
@@ -2044,7 +2066,7 @@
     },
     "ProxyDictSignatureKeyIdParameter0482F1D8": {
       "Type": "AWS::SSM::Parameter::Value<String>",
-      "Default": "SignatureKeyId"
+      "Default": "/pix/proxy/kms/SignatureKeyId"
     }
   },
   "Outputs": {

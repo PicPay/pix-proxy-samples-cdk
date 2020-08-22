@@ -2017,7 +2017,7 @@
           "Type": "CODEPIPELINE"
         },
         "Environment": {
-          "ComputeType": "BUILD_GENERAL1_SMALL",
+          "ComputeType": "BUILD_GENERAL1_MEDIUM",
           "Image": "aws/codebuild/amazonlinux2-x86_64-standard:3.0",
           "PrivilegedMode": true,
           "Type": "LINUX_CONTAINER"
@@ -2189,7 +2189,7 @@
               "Principal": {
                 "AWS": {
                   "Fn::GetAtt": [
-                    "PipelineClusterStackDeployRoleB42B94E8",
+                    "PipelineLambdaStackDeployRoleFADAEE38",
                     "Arn"
                   ]
                 }
@@ -2205,7 +2205,7 @@
               "Principal": {
                 "AWS": {
                   "Fn::GetAtt": [
-                    "PipelineClusterStackDeployCodePipelineActionRole81AA9954",
+                    "PipelineLambdaStackDeployCodePipelineActionRole9D567907",
                     "Arn"
                   ]
                 }
@@ -2349,7 +2349,7 @@
               "Effect": "Allow",
               "Resource": {
                 "Fn::GetAtt": [
-                  "PipelineBuildContainerImageBuildCodePipelineActionRole3C878B03",
+                  "PipelineBuildLambdaFunctionBuildCodePipelineActionRole9959117F",
                   "Arn"
                 ]
               }
@@ -2379,7 +2379,7 @@
               "Effect": "Allow",
               "Resource": {
                 "Fn::GetAtt": [
-                  "PipelineClusterStackDeployCodePipelineActionRole81AA9954",
+                  "PipelineLambdaStackDeployCodePipelineActionRole9D567907",
                   "Arn"
                 ]
               }
@@ -2535,7 +2535,7 @@
                     "Name": "kmsJce"
                   }
                 ],
-                "Name": "ContainerImage_Build",
+                "Name": "LambdaFunction_Build",
                 "OutputArtifacts": [
                   {
                     "Name": "LambdaFunctionBuildOutput"
@@ -2543,7 +2543,7 @@
                 ],
                 "RoleArn": {
                   "Fn::GetAtt": [
-                    "PipelineBuildContainerImageBuildCodePipelineActionRole3C878B03",
+                    "PipelineBuildLambdaFunctionBuildCodePipelineActionRole9959117F",
                     "Arn"
                   ]
                 },
@@ -2621,7 +2621,7 @@
                   "Capabilities": "CAPABILITY_NAMED_IAM",
                   "RoleArn": {
                     "Fn::GetAtt": [
-                      "PipelineClusterStackDeployRoleB42B94E8",
+                      "PipelineLambdaStackDeployRoleFADAEE38",
                       "Arn"
                     ]
                   },
@@ -2640,14 +2640,14 @@
                 "Name": "Deploy",
                 "RoleArn": {
                   "Fn::GetAtt": [
-                    "PipelineClusterStackDeployCodePipelineActionRole81AA9954",
+                    "PipelineLambdaStackDeployCodePipelineActionRole9D567907",
                     "Arn"
                   ]
                 },
                 "RunOrder": 1
               }
             ],
-            "Name": "ClusterStack"
+            "Name": "LambdaStack"
           }
         ],
         "ArtifactStore": {
@@ -2674,7 +2674,7 @@
         "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/Resource"
       }
     },
-    "PipelineBuildContainerImageBuildCodePipelineActionRole3C878B03": {
+    "PipelineBuildLambdaFunctionBuildCodePipelineActionRole9959117F": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -2706,10 +2706,10 @@
         }
       },
       "Metadata": {
-        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/Build/ContainerImage_Build/CodePipelineActionRole/Resource"
+        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/Build/LambdaFunction_Build/CodePipelineActionRole/Resource"
       }
     },
-    "PipelineBuildContainerImageBuildCodePipelineActionRoleDefaultPolicy9C078FDC": {
+    "PipelineBuildLambdaFunctionBuildCodePipelineActionRoleDefaultPolicy5F98184E": {
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyDocument": {
@@ -2731,15 +2731,15 @@
           ],
           "Version": "2012-10-17"
         },
-        "PolicyName": "PipelineBuildContainerImageBuildCodePipelineActionRoleDefaultPolicy9C078FDC",
+        "PolicyName": "PipelineBuildLambdaFunctionBuildCodePipelineActionRoleDefaultPolicy5F98184E",
         "Roles": [
           {
-            "Ref": "PipelineBuildContainerImageBuildCodePipelineActionRole3C878B03"
+            "Ref": "PipelineBuildLambdaFunctionBuildCodePipelineActionRole9959117F"
           }
         ]
       },
       "Metadata": {
-        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/Build/ContainerImage_Build/CodePipelineActionRole/DefaultPolicy/Resource"
+        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/Build/LambdaFunction_Build/CodePipelineActionRole/DefaultPolicy/Resource"
       }
     },
     "PipelineBuildTestContainerImageBuildCodePipelineActionRoleC955F653": {
@@ -2845,7 +2845,7 @@
         "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/Approval/ManualApproval/CodePipelineActionRole/Resource"
       }
     },
-    "PipelineClusterStackDeployCodePipelineActionRole81AA9954": {
+    "PipelineLambdaStackDeployCodePipelineActionRole9D567907": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -2877,10 +2877,10 @@
         }
       },
       "Metadata": {
-        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/ClusterStack/Deploy/CodePipelineActionRole/Resource"
+        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/LambdaStack/Deploy/CodePipelineActionRole/Resource"
       }
     },
-    "PipelineClusterStackDeployCodePipelineActionRoleDefaultPolicy7DF92B4C": {
+    "PipelineLambdaStackDeployCodePipelineActionRoleDefaultPolicy2CA83519": {
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyDocument": {
@@ -2890,7 +2890,7 @@
               "Effect": "Allow",
               "Resource": {
                 "Fn::GetAtt": [
-                  "PipelineClusterStackDeployRoleB42B94E8",
+                  "PipelineLambdaStackDeployRoleFADAEE38",
                   "Arn"
                 ]
               }
@@ -2973,18 +2973,18 @@
           ],
           "Version": "2012-10-17"
         },
-        "PolicyName": "PipelineClusterStackDeployCodePipelineActionRoleDefaultPolicy7DF92B4C",
+        "PolicyName": "PipelineLambdaStackDeployCodePipelineActionRoleDefaultPolicy2CA83519",
         "Roles": [
           {
-            "Ref": "PipelineClusterStackDeployCodePipelineActionRole81AA9954"
+            "Ref": "PipelineLambdaStackDeployCodePipelineActionRole9D567907"
           }
         ]
       },
       "Metadata": {
-        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/ClusterStack/Deploy/CodePipelineActionRole/DefaultPolicy/Resource"
+        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/LambdaStack/Deploy/CodePipelineActionRole/DefaultPolicy/Resource"
       }
     },
-    "PipelineClusterStackDeployRoleB42B94E8": {
+    "PipelineLambdaStackDeployRoleFADAEE38": {
       "Type": "AWS::IAM::Role",
       "Properties": {
         "AssumeRolePolicyDocument": {
@@ -3001,10 +3001,10 @@
         }
       },
       "Metadata": {
-        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/ClusterStack/Deploy/Role/Resource"
+        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/LambdaStack/Deploy/Role/Resource"
       }
     },
-    "PipelineClusterStackDeployRoleDefaultPolicy069C9D36": {
+    "PipelineLambdaStackDeployRoleDefaultPolicyF3746693": {
       "Type": "AWS::IAM::Policy",
       "Properties": {
         "PolicyDocument": {
@@ -3060,15 +3060,15 @@
           ],
           "Version": "2012-10-17"
         },
-        "PolicyName": "PipelineClusterStackDeployRoleDefaultPolicy069C9D36",
+        "PolicyName": "PipelineLambdaStackDeployRoleDefaultPolicyF3746693",
         "Roles": [
           {
-            "Ref": "PipelineClusterStackDeployRoleB42B94E8"
+            "Ref": "PipelineLambdaStackDeployRoleFADAEE38"
           }
         ]
       },
       "Metadata": {
-        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/ClusterStack/Deploy/Role/DefaultPolicy/Resource"
+        "aws:cdk:path": "Pix-Proxy-KMS/Pipeline/Pipeline/LambdaStack/Deploy/Role/DefaultPolicy/Resource"
       }
     }
   },

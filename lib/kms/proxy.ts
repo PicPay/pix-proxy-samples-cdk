@@ -80,7 +80,8 @@ export class Proxy extends cdk.Construct {
             environment: {
                 DISABLE_SIGNAL_HANDLERS: "true",
                 PIX_SPI_PROXY: `${spiProxy}`
-            }
+            },
+            tracing: lambda.Tracing.ACTIVE
         });
 
         this.addPermissions(func, spiProxy);
@@ -121,7 +122,7 @@ export class Proxy extends cdk.Construct {
             ]
         }));
 
-        let signatureKeyId = ssm.StringParameter.fromStringParameterName(this, `${spiProxy ? 'Spi' : 'Dict'}SignatureKeyId`, Config.SignatureKeyId);
+        let signatureKeyId = ssm.StringParameter.fromStringParameterName(this, `${spiProxy ? 'Spi' : 'Dict'}SignatureKeyId`, Config.getParameterName(Config.SignatureKeyId));
 
         func.addToRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,

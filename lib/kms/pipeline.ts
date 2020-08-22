@@ -102,7 +102,8 @@ export class Pipeline extends cdk.Construct {
             buildSpec: this.createBuildSpec(inputKmsJce),
             environment: {
                 buildImage: codebuild.LinuxBuildImage.AMAZON_LINUX_2_3,
-                privileged: true
+                privileged: true,
+                computeType: codebuild.ComputeType.MEDIUM
             }
         });
 
@@ -110,11 +111,11 @@ export class Pipeline extends cdk.Construct {
             stageName: 'Build',
             actions: [
                 new codepipeline_actions.CodeBuildAction({
-                    actionName: 'ContainerImage_Build',
+                    actionName: 'LambdaFunction_Build',
                     project: project,
                     input: input,
                     extraInputs: [inputKmsJce],
-                    outputs: [output],
+                    outputs: [output]
                 }),
                 this.props.testBase.createBuildAction(input, testOutput)
             ],
@@ -167,7 +168,7 @@ export class Pipeline extends cdk.Construct {
 
     private createClusterStackDeployStage(input: codepipeline.Artifact, cdkInput: codepipeline.Artifact): codepipeline.StageProps {
         return {
-            stageName: 'ClusterStack',
+            stageName: 'LambdaStack',
             actions: [
                 new codepipeline_actions.CloudFormationCreateUpdateStackAction({
                     actionName: 'Deploy',
