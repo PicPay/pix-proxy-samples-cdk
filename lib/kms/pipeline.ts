@@ -141,7 +141,7 @@ export class Pipeline extends cdk.Construct {
                         `cd $CODEBUILD_SRC_DIR_${inputKmsJce.artifactName}`,
                         'mvn clean install -DskipTests',
                         'cd $CODEBUILD_SRC_DIR',
-                        'mvn -f proxy/pom.xml -pl core,kms clean package -DskipTests -Pnative -Dnative-image.docker-build=true'
+                        'mvn -f proxy/pom.xml -pl core,kms clean package -DskipTests -Pnative -Dnative-image.docker-build=true -Dquarkus.native.enable-jni=true'
                     ]
                 }
             },
