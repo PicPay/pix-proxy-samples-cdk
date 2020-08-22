@@ -1,0 +1,2172 @@
+{
+  "Resources": {
+    "ProxyVpcEndpointSecurityGroup1067B8E8": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Pix-Proxy-KMS-Lambda/Proxy/VpcEndpoint/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": {
+              "Fn::ImportValue": "Pix-Proxy-KMS-VpcCidr"
+            },
+            "Description": {
+              "Fn::Join": [
+                "",
+                [
+                  "from ",
+                  {
+                    "Fn::ImportValue": "Pix-Proxy-KMS-VpcCidr"
+                  },
+                  ":443"
+                ]
+              ]
+            },
+            "FromPort": 443,
+            "IpProtocol": "tcp",
+            "ToPort": 443
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-VpcId"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/VpcEndpoint/SecurityGroup/Resource"
+      }
+    },
+    "ProxyVpcEndpointB79A122C": {
+      "Type": "AWS::EC2::VPCEndpoint",
+      "Properties": {
+        "ServiceName": {
+          "Fn::Join": [
+            "",
+            [
+              "com.amazonaws.",
+              {
+                "Ref": "AWS::Region"
+              },
+              ".execute-api"
+            ]
+          ]
+        },
+        "VpcId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-VpcId"
+        },
+        "PrivateDnsEnabled": true,
+        "SecurityGroupIds": [
+          {
+            "Fn::GetAtt": [
+              "ProxyVpcEndpointSecurityGroup1067B8E8",
+              "GroupId"
+            ]
+          }
+        ],
+        "SubnetIds": {
+          "Fn::Split": [
+            ",",
+            {
+              "Fn::ImportValue": "Pix-Proxy-KMS-VpcPrivateSubnetIds"
+            }
+          ]
+        },
+        "VpcEndpointType": "Interface"
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/VpcEndpoint/Resource"
+      }
+    },
+    "ProxySpiLambdaServiceRole0C5DE2EB": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/SpiLambda/ServiceRole/Resource"
+      }
+    },
+    "ProxySpiLambdaServiceRoleDefaultPolicy9C2EAE44": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "ssm:GetParametersByPath",
+                "ssm:DescribeParameters",
+                "ssm:GetParameters",
+                "ssm:GetParameter",
+                "ssm:GetParameterHistory"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":parameter/pix/proxy/kms/"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":parameter/pix/proxy/kms/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:secretsmanager:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":secret:/pix/proxy/kms/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "firehose:PutRecord",
+                "firehose:PutRecordBatch"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:firehose:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":deliverystream/",
+                    {
+                      "Ref": "ProxySpiAuditStreamParameter6B2B0756"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": [
+                "kms:GetPublicKey",
+                "kms:Verify",
+                "kms:Sign"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:firehose:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":key/",
+                    {
+                      "Ref": "ProxySpiSignatureKeyIdParameter3A820E70"
+                    }
+                  ]
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "ProxySpiLambdaServiceRoleDefaultPolicy9C2EAE44",
+        "Roles": [
+          {
+            "Ref": "ProxySpiLambdaServiceRole0C5DE2EB"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/SpiLambda/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "ProxySpiLambdaSecurityGroup90CFB224": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function PixProxyKMSLambdaProxySpiLambda7F710B5C",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-VpcId"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/SpiLambda/SecurityGroup/Resource"
+      }
+    },
+    "ProxySpiLambda9F1DD8FF": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ProxySpiLambdaLambdaSourceBucketNameParameter977E85B7"
+          },
+          "S3Key": {
+            "Ref": "ProxySpiLambdaLambdaSourceObjectKeyParameterC7492CB5"
+          }
+        },
+        "Handler": "none",
+        "Role": {
+          "Fn::GetAtt": [
+            "ProxySpiLambdaServiceRole0C5DE2EB",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "DISABLE_SIGNAL_HANDLERS": "true",
+            "PIX_SPI_PROXY": "true"
+          }
+        },
+        "MemorySize": 1024,
+        "Timeout": 30,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "ProxySpiLambdaSecurityGroup90CFB224",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": {
+            "Fn::Split": [
+              ",",
+              {
+                "Fn::ImportValue": "Pix-Proxy-KMS-VpcPrivateSubnetIds"
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "ProxySpiLambdaServiceRoleDefaultPolicy9C2EAE44",
+        "ProxySpiLambdaServiceRole0C5DE2EB"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/SpiLambda/Resource"
+      }
+    },
+    "ProxyspiApi2B68DB12": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "BinaryMediaTypes": [
+          "application/xml"
+        ],
+        "EndpointConfiguration": {
+          "Types": [
+            "PRIVATE"
+          ],
+          "VpcEndpointIds": [
+            {
+              "Ref": "ProxyVpcEndpointB79A122C"
+            }
+          ]
+        },
+        "Name": "pix-proxy-kms-spi",
+        "Policy": {
+          "Statement": [
+            {
+              "Action": "execute-api:Invoke",
+              "Condition": {
+                "StringNotEquals": {
+                  "aws:SourceVpce": {
+                    "Ref": "ProxyVpcEndpointB79A122C"
+                  }
+                }
+              },
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": "execute-api:/*"
+            },
+            {
+              "Action": "execute-api:Invoke",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Resource": "execute-api:/*"
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Resource"
+      }
+    },
+    "ProxyspiApiCloudWatchRole97915C11": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/CloudWatchRole/Resource"
+      }
+    },
+    "ProxyspiApiAccount62734AE5": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::GetAtt": [
+            "ProxyspiApiCloudWatchRole97915C11",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "ProxyspiApi2B68DB12"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Account"
+      }
+    },
+    "ProxyspiApiDeployment2698923Dba94c921c40e376949c70a3844cc1f89": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "ProxyspiApi2B68DB12"
+        },
+        "Description": "Automatically created by the RestApi construct"
+      },
+      "DependsOn": [
+        "ProxyspiApiproxyANYE4E6CFF2",
+        "ProxyspiApiproxyCA1C3D20",
+        "ProxyspiApiANY7A9F97D9"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Deployment/Resource"
+      }
+    },
+    "ProxyspiApiDeploymentStageprodFF80ED60": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "ProxyspiApi2B68DB12"
+        },
+        "DeploymentId": {
+          "Ref": "ProxyspiApiDeployment2698923Dba94c921c40e376949c70a3844cc1f89"
+        },
+        "StageName": "prod"
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/DeploymentStage.prod/Resource"
+      }
+    },
+    "ProxyspiApiproxyCA1C3D20": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ProxyspiApi2B68DB12",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "{proxy+}",
+        "RestApiId": {
+          "Ref": "ProxyspiApi2B68DB12"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Default/{proxy+}/Resource"
+      }
+    },
+    "ProxyspiApiproxyANYApiPermissionPixProxyKMSLambdaProxyspiApi98F53816ANYproxy49A4C652": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxySpiLambda9F1DD8FF",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxyspiApi2B68DB12"
+              },
+              "/",
+              {
+                "Ref": "ProxyspiApiDeploymentStageprodFF80ED60"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Default/{proxy+}/ANY/ApiPermission.PixProxyKMSLambdaProxyspiApi98F53816.ANY..{proxy+}"
+      }
+    },
+    "ProxyspiApiproxyANYApiPermissionTestPixProxyKMSLambdaProxyspiApi98F53816ANYproxyE322BCD0": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxySpiLambda9F1DD8FF",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxyspiApi2B68DB12"
+              },
+              "/test-invoke-stage/*/*"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Default/{proxy+}/ANY/ApiPermission.Test.PixProxyKMSLambdaProxyspiApi98F53816.ANY..{proxy+}"
+      }
+    },
+    "ProxyspiApiproxyANYE4E6CFF2": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "ANY",
+        "ResourceId": {
+          "Ref": "ProxyspiApiproxyCA1C3D20"
+        },
+        "RestApiId": {
+          "Ref": "ProxyspiApi2B68DB12"
+        },
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ProxySpiLambda9F1DD8FF",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Default/{proxy+}/ANY/Resource"
+      }
+    },
+    "ProxyspiApiANYApiPermissionPixProxyKMSLambdaProxyspiApi98F53816ANY3F46D1EC": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxySpiLambda9F1DD8FF",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxyspiApi2B68DB12"
+              },
+              "/",
+              {
+                "Ref": "ProxyspiApiDeploymentStageprodFF80ED60"
+              },
+              "/*/"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Default/ANY/ApiPermission.PixProxyKMSLambdaProxyspiApi98F53816.ANY.."
+      }
+    },
+    "ProxyspiApiANYApiPermissionTestPixProxyKMSLambdaProxyspiApi98F53816ANY3D2DF95F": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxySpiLambda9F1DD8FF",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxyspiApi2B68DB12"
+              },
+              "/test-invoke-stage/*/"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Default/ANY/ApiPermission.Test.PixProxyKMSLambdaProxyspiApi98F53816.ANY.."
+      }
+    },
+    "ProxyspiApiANY7A9F97D9": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "ANY",
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "ProxyspiApi2B68DB12",
+            "RootResourceId"
+          ]
+        },
+        "RestApiId": {
+          "Ref": "ProxyspiApi2B68DB12"
+        },
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ProxySpiLambda9F1DD8FF",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Default/ANY/Resource"
+      }
+    },
+    "ProxyDictLambdaServiceRole00C8FA4C": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "lambda.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaBasicExecutionRole"
+              ]
+            ]
+          },
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AWSLambdaVPCAccessExecutionRole"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/DictLambda/ServiceRole/Resource"
+      }
+    },
+    "ProxyDictLambdaServiceRoleDefaultPolicy248EA7F7": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "secretsmanager:GetSecretValue",
+                "secretsmanager:DescribeSecret",
+                "ssm:GetParametersByPath",
+                "ssm:DescribeParameters",
+                "ssm:GetParameters",
+                "ssm:GetParameter",
+                "ssm:GetParameterHistory"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":parameter/pix/proxy/kms/"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":parameter/pix/proxy/kms/*"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:secretsmanager:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":secret:/pix/proxy/kms/*"
+                    ]
+                  ]
+                }
+              ]
+            },
+            {
+              "Action": [
+                "firehose:PutRecord",
+                "firehose:PutRecordBatch"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:firehose:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":deliverystream/",
+                    {
+                      "Ref": "ProxyDictAuditStreamParameterFBFFF1DC"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": [
+                "kms:GetPublicKey",
+                "kms:Verify",
+                "kms:Sign"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:aws:firehose:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":key/",
+                    {
+                      "Ref": "ProxyDictSignatureKeyIdParameter0482F1D8"
+                    }
+                  ]
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "ProxyDictLambdaServiceRoleDefaultPolicy248EA7F7",
+        "Roles": [
+          {
+            "Ref": "ProxyDictLambdaServiceRole00C8FA4C"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/DictLambda/ServiceRole/DefaultPolicy/Resource"
+      }
+    },
+    "ProxyDictLambdaSecurityGroup7463885D": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Automatic security group for Lambda Function PixProxyKMSLambdaProxyDictLambda8AD963C7",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-VpcId"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/DictLambda/SecurityGroup/Resource"
+      }
+    },
+    "ProxyDictLambda82DD4BB3": {
+      "Type": "AWS::Lambda::Function",
+      "Properties": {
+        "Code": {
+          "S3Bucket": {
+            "Ref": "ProxySpiLambdaLambdaSourceBucketNameParameter977E85B7"
+          },
+          "S3Key": {
+            "Ref": "ProxySpiLambdaLambdaSourceObjectKeyParameterC7492CB5"
+          }
+        },
+        "Handler": "none",
+        "Role": {
+          "Fn::GetAtt": [
+            "ProxyDictLambdaServiceRole00C8FA4C",
+            "Arn"
+          ]
+        },
+        "Runtime": "provided",
+        "Environment": {
+          "Variables": {
+            "DISABLE_SIGNAL_HANDLERS": "true",
+            "PIX_SPI_PROXY": "false"
+          }
+        },
+        "MemorySize": 1024,
+        "Timeout": 30,
+        "VpcConfig": {
+          "SecurityGroupIds": [
+            {
+              "Fn::GetAtt": [
+                "ProxyDictLambdaSecurityGroup7463885D",
+                "GroupId"
+              ]
+            }
+          ],
+          "SubnetIds": {
+            "Fn::Split": [
+              ",",
+              {
+                "Fn::ImportValue": "Pix-Proxy-KMS-VpcPrivateSubnetIds"
+              }
+            ]
+          }
+        }
+      },
+      "DependsOn": [
+        "ProxyDictLambdaServiceRoleDefaultPolicy248EA7F7",
+        "ProxyDictLambdaServiceRole00C8FA4C"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/DictLambda/Resource"
+      }
+    },
+    "ProxydictApi9496AE01": {
+      "Type": "AWS::ApiGateway::RestApi",
+      "Properties": {
+        "BinaryMediaTypes": [
+          "application/xml"
+        ],
+        "EndpointConfiguration": {
+          "Types": [
+            "PRIVATE"
+          ],
+          "VpcEndpointIds": [
+            {
+              "Ref": "ProxyVpcEndpointB79A122C"
+            }
+          ]
+        },
+        "Name": "pix-proxy-kms-dict",
+        "Policy": {
+          "Statement": [
+            {
+              "Action": "execute-api:Invoke",
+              "Condition": {
+                "StringNotEquals": {
+                  "aws:SourceVpce": {
+                    "Ref": "ProxyVpcEndpointB79A122C"
+                  }
+                }
+              },
+              "Effect": "Deny",
+              "Principal": "*",
+              "Resource": "execute-api:/*"
+            },
+            {
+              "Action": "execute-api:Invoke",
+              "Effect": "Allow",
+              "Principal": "*",
+              "Resource": "execute-api:/*"
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Resource"
+      }
+    },
+    "ProxydictApiCloudWatchRole590A6EFC": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "apigateway.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "ManagedPolicyArns": [
+          {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":iam::aws:policy/service-role/AmazonAPIGatewayPushToCloudWatchLogs"
+              ]
+            ]
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/CloudWatchRole/Resource"
+      }
+    },
+    "ProxydictApiAccount5C598883": {
+      "Type": "AWS::ApiGateway::Account",
+      "Properties": {
+        "CloudWatchRoleArn": {
+          "Fn::GetAtt": [
+            "ProxydictApiCloudWatchRole590A6EFC",
+            "Arn"
+          ]
+        }
+      },
+      "DependsOn": [
+        "ProxydictApi9496AE01"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Account"
+      }
+    },
+    "ProxydictApiDeploymentF9AA587Ee4a29715d046a83ab3259fa81fcacb82": {
+      "Type": "AWS::ApiGateway::Deployment",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "ProxydictApi9496AE01"
+        },
+        "Description": "Automatically created by the RestApi construct"
+      },
+      "DependsOn": [
+        "ProxydictApiproxyANYED832A1A",
+        "ProxydictApiproxyC0EF2A2E",
+        "ProxydictApiANY84ED00E9"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Deployment/Resource"
+      }
+    },
+    "ProxydictApiDeploymentStageprodE56A4A6B": {
+      "Type": "AWS::ApiGateway::Stage",
+      "Properties": {
+        "RestApiId": {
+          "Ref": "ProxydictApi9496AE01"
+        },
+        "DeploymentId": {
+          "Ref": "ProxydictApiDeploymentF9AA587Ee4a29715d046a83ab3259fa81fcacb82"
+        },
+        "StageName": "prod"
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/DeploymentStage.prod/Resource"
+      }
+    },
+    "ProxydictApiproxyC0EF2A2E": {
+      "Type": "AWS::ApiGateway::Resource",
+      "Properties": {
+        "ParentId": {
+          "Fn::GetAtt": [
+            "ProxydictApi9496AE01",
+            "RootResourceId"
+          ]
+        },
+        "PathPart": "{proxy+}",
+        "RestApiId": {
+          "Ref": "ProxydictApi9496AE01"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Default/{proxy+}/Resource"
+      }
+    },
+    "ProxydictApiproxyANYApiPermissionPixProxyKMSLambdaProxydictApiEB88A652ANYproxyA3CC79FA": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxyDictLambda82DD4BB3",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxydictApi9496AE01"
+              },
+              "/",
+              {
+                "Ref": "ProxydictApiDeploymentStageprodE56A4A6B"
+              },
+              "/*/*"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Default/{proxy+}/ANY/ApiPermission.PixProxyKMSLambdaProxydictApiEB88A652.ANY..{proxy+}"
+      }
+    },
+    "ProxydictApiproxyANYApiPermissionTestPixProxyKMSLambdaProxydictApiEB88A652ANYproxy133EF982": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxyDictLambda82DD4BB3",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxydictApi9496AE01"
+              },
+              "/test-invoke-stage/*/*"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Default/{proxy+}/ANY/ApiPermission.Test.PixProxyKMSLambdaProxydictApiEB88A652.ANY..{proxy+}"
+      }
+    },
+    "ProxydictApiproxyANYED832A1A": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "ANY",
+        "ResourceId": {
+          "Ref": "ProxydictApiproxyC0EF2A2E"
+        },
+        "RestApiId": {
+          "Ref": "ProxydictApi9496AE01"
+        },
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ProxyDictLambda82DD4BB3",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Default/{proxy+}/ANY/Resource"
+      }
+    },
+    "ProxydictApiANYApiPermissionPixProxyKMSLambdaProxydictApiEB88A652ANY572FB07C": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxyDictLambda82DD4BB3",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxydictApi9496AE01"
+              },
+              "/",
+              {
+                "Ref": "ProxydictApiDeploymentStageprodE56A4A6B"
+              },
+              "/*/"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Default/ANY/ApiPermission.PixProxyKMSLambdaProxydictApiEB88A652.ANY.."
+      }
+    },
+    "ProxydictApiANYApiPermissionTestPixProxyKMSLambdaProxydictApiEB88A652ANY2616BD2D": {
+      "Type": "AWS::Lambda::Permission",
+      "Properties": {
+        "Action": "lambda:InvokeFunction",
+        "FunctionName": {
+          "Fn::GetAtt": [
+            "ProxyDictLambda82DD4BB3",
+            "Arn"
+          ]
+        },
+        "Principal": "apigateway.amazonaws.com",
+        "SourceArn": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":execute-api:",
+              {
+                "Ref": "AWS::Region"
+              },
+              ":",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":",
+              {
+                "Ref": "ProxydictApi9496AE01"
+              },
+              "/test-invoke-stage/*/"
+            ]
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Default/ANY/ApiPermission.Test.PixProxyKMSLambdaProxydictApiEB88A652.ANY.."
+      }
+    },
+    "ProxydictApiANY84ED00E9": {
+      "Type": "AWS::ApiGateway::Method",
+      "Properties": {
+        "HttpMethod": "ANY",
+        "ResourceId": {
+          "Fn::GetAtt": [
+            "ProxydictApi9496AE01",
+            "RootResourceId"
+          ]
+        },
+        "RestApiId": {
+          "Ref": "ProxydictApi9496AE01"
+        },
+        "AuthorizationType": "NONE",
+        "Integration": {
+          "IntegrationHttpMethod": "POST",
+          "Type": "AWS_PROXY",
+          "Uri": {
+            "Fn::Join": [
+              "",
+              [
+                "arn:",
+                {
+                  "Ref": "AWS::Partition"
+                },
+                ":apigateway:",
+                {
+                  "Ref": "AWS::Region"
+                },
+                ":lambda:path/2015-03-31/functions/",
+                {
+                  "Fn::GetAtt": [
+                    "ProxyDictLambda82DD4BB3",
+                    "Arn"
+                  ]
+                },
+                "/invocations"
+              ]
+            ]
+          }
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Default/ANY/Resource"
+      }
+    },
+    "ClusterTestEcsTestCluster397953A3": {
+      "Type": "AWS::ECS::Cluster",
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/EcsTestCluster/Resource"
+      }
+    },
+    "ClusterTestServicePixProxyTestNLBD1F14DCC": {
+      "Type": "AWS::ElasticLoadBalancingV2::LoadBalancer",
+      "Properties": {
+        "Scheme": "internal",
+        "Subnets": {
+          "Fn::Split": [
+            ",",
+            {
+              "Fn::ImportValue": "Pix-Proxy-KMS-VpcPrivateSubnetIds"
+            }
+          ]
+        },
+        "Type": "network"
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Pix-Proxy-Test-NLB/Resource"
+      }
+    },
+    "ClusterTestServicePixProxyTestNLBDictListenerTest1727E29A": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "ClusterTestServicePixProxyTestNLBDictListenerTestECSTargetGroupPixProxyTest8181Group6C23ABE8"
+            },
+            "Type": "forward"
+          }
+        ],
+        "LoadBalancerArn": {
+          "Ref": "ClusterTestServicePixProxyTestNLBD1F14DCC"
+        },
+        "Port": 8181,
+        "Protocol": "TCP"
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Pix-Proxy-Test-NLB/DictListenerTest/Resource"
+      }
+    },
+    "ClusterTestServicePixProxyTestNLBDictListenerTestECSTargetGroupPixProxyTest8181Group6C23ABE8": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckPort": "7171",
+        "Port": 80,
+        "Protocol": "TCP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-VpcId"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Pix-Proxy-Test-NLB/DictListenerTest/ECSTargetGroupPix-Proxy-Test8181Group/Resource"
+      }
+    },
+    "ClusterTestServicePixProxyTestNLBSpiListenerTestBCEF51EB": {
+      "Type": "AWS::ElasticLoadBalancingV2::Listener",
+      "Properties": {
+        "DefaultActions": [
+          {
+            "TargetGroupArn": {
+              "Ref": "ClusterTestServicePixProxyTestNLBSpiListenerTestECSTargetGroupPixProxyTest9191Group244A33F6"
+            },
+            "Type": "forward"
+          }
+        ],
+        "LoadBalancerArn": {
+          "Ref": "ClusterTestServicePixProxyTestNLBD1F14DCC"
+        },
+        "Port": 9191,
+        "Protocol": "TCP"
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Pix-Proxy-Test-NLB/SpiListenerTest/Resource"
+      }
+    },
+    "ClusterTestServicePixProxyTestNLBSpiListenerTestECSTargetGroupPixProxyTest9191Group244A33F6": {
+      "Type": "AWS::ElasticLoadBalancingV2::TargetGroup",
+      "Properties": {
+        "HealthCheckPort": "7171",
+        "Port": 80,
+        "Protocol": "TCP",
+        "TargetType": "ip",
+        "VpcId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-VpcId"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Pix-Proxy-Test-NLB/SpiListenerTest/ECSTargetGroupPix-Proxy-Test9191Group/Resource"
+      }
+    },
+    "ClusterTestServiceTaskDefTaskRole2BE57A45": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/TaskDef/TaskRole/Resource"
+      }
+    },
+    "ClusterTestServiceTaskDefTaskRoleDefaultPolicy52F29256": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ssm:GetParametersByPath",
+                "ssm:DescribeParameters",
+                "ssm:GetParameters",
+                "ssm:GetParameter",
+                "ssm:GetParameterHistory"
+              ],
+              "Effect": "Allow",
+              "Resource": [
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":parameter/pix/proxy/"
+                    ]
+                  ]
+                },
+                {
+                  "Fn::Join": [
+                    "",
+                    [
+                      "arn:aws:ssm:",
+                      {
+                        "Ref": "AWS::Region"
+                      },
+                      ":",
+                      {
+                        "Ref": "AWS::AccountId"
+                      },
+                      ":parameter/pix/proxy/*"
+                    ]
+                  ]
+                }
+              ]
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "ClusterTestServiceTaskDefTaskRoleDefaultPolicy52F29256",
+        "Roles": [
+          {
+            "Ref": "ClusterTestServiceTaskDefTaskRole2BE57A45"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/TaskDef/TaskRole/DefaultPolicy/Resource"
+      }
+    },
+    "ClusterTestServiceTaskDef906B3F8B": {
+      "Type": "AWS::ECS::TaskDefinition",
+      "Properties": {
+        "ContainerDefinitions": [
+          {
+            "Essential": true,
+            "Image": {
+              "Fn::Join": [
+                "",
+                [
+                  {
+                    "Fn::Select": [
+                      4,
+                      {
+                        "Fn::Split": [
+                          ":",
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:",
+                                {
+                                  "Ref": "AWS::Partition"
+                                },
+                                ":ecr:",
+                                {
+                                  "Ref": "AWS::Region"
+                                },
+                                ":",
+                                {
+                                  "Ref": "AWS::AccountId"
+                                },
+                                ":repository/",
+                                {
+                                  "Fn::ImportValue": "Pix-Proxy-KMS-EcrRepoTest"
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  ".dkr.ecr.",
+                  {
+                    "Fn::Select": [
+                      3,
+                      {
+                        "Fn::Split": [
+                          ":",
+                          {
+                            "Fn::Join": [
+                              "",
+                              [
+                                "arn:",
+                                {
+                                  "Ref": "AWS::Partition"
+                                },
+                                ":ecr:",
+                                {
+                                  "Ref": "AWS::Region"
+                                },
+                                ":",
+                                {
+                                  "Ref": "AWS::AccountId"
+                                },
+                                ":repository/",
+                                {
+                                  "Fn::ImportValue": "Pix-Proxy-KMS-EcrRepoTest"
+                                }
+                              ]
+                            ]
+                          }
+                        ]
+                      }
+                    ]
+                  },
+                  ".",
+                  {
+                    "Ref": "AWS::URLSuffix"
+                  },
+                  "/",
+                  {
+                    "Fn::ImportValue": "Pix-Proxy-KMS-EcrRepoTest"
+                  },
+                  ":latest"
+                ]
+              ]
+            },
+            "LogConfiguration": {
+              "LogDriver": "awslogs",
+              "Options": {
+                "awslogs-group": {
+                  "Ref": "ClusterTestServiceTaskDefPixProxyTestLogGroup0B252625"
+                },
+                "awslogs-stream-prefix": "Service",
+                "awslogs-region": {
+                  "Ref": "AWS::Region"
+                }
+              }
+            },
+            "Name": "Pix-Proxy-Test",
+            "PortMappings": [
+              {
+                "ContainerPort": 8181,
+                "Protocol": "tcp"
+              },
+              {
+                "ContainerPort": 9191,
+                "Protocol": "tcp"
+              },
+              {
+                "ContainerPort": 7171,
+                "Protocol": "tcp"
+              }
+            ]
+          }
+        ],
+        "Cpu": "512",
+        "ExecutionRoleArn": {
+          "Fn::GetAtt": [
+            "ClusterTestServiceTaskDefExecutionRole2E8E1E99",
+            "Arn"
+          ]
+        },
+        "Family": "PixProxyKMSLambdaClusterTestServiceTaskDefF6D48663",
+        "Memory": "1024",
+        "NetworkMode": "awsvpc",
+        "RequiresCompatibilities": [
+          "FARGATE"
+        ],
+        "TaskRoleArn": {
+          "Fn::GetAtt": [
+            "ClusterTestServiceTaskDefTaskRole2BE57A45",
+            "Arn"
+          ]
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/TaskDef/Resource"
+      }
+    },
+    "ClusterTestServiceTaskDefPixProxyTestLogGroup0B252625": {
+      "Type": "AWS::Logs::LogGroup",
+      "UpdateReplacePolicy": "Retain",
+      "DeletionPolicy": "Retain",
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/TaskDef/Pix-Proxy-Test/LogGroup/Resource"
+      }
+    },
+    "ClusterTestServiceTaskDefExecutionRole2E8E1E99": {
+      "Type": "AWS::IAM::Role",
+      "Properties": {
+        "AssumeRolePolicyDocument": {
+          "Statement": [
+            {
+              "Action": "sts:AssumeRole",
+              "Effect": "Allow",
+              "Principal": {
+                "Service": "ecs-tasks.amazonaws.com"
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/TaskDef/ExecutionRole/Resource"
+      }
+    },
+    "ClusterTestServiceTaskDefExecutionRoleDefaultPolicy2AB89D66": {
+      "Type": "AWS::IAM::Policy",
+      "Properties": {
+        "PolicyDocument": {
+          "Statement": [
+            {
+              "Action": [
+                "ecr:BatchCheckLayerAvailability",
+                "ecr:GetDownloadUrlForLayer",
+                "ecr:BatchGetImage"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::Join": [
+                  "",
+                  [
+                    "arn:",
+                    {
+                      "Ref": "AWS::Partition"
+                    },
+                    ":ecr:",
+                    {
+                      "Ref": "AWS::Region"
+                    },
+                    ":",
+                    {
+                      "Ref": "AWS::AccountId"
+                    },
+                    ":repository/",
+                    {
+                      "Fn::ImportValue": "Pix-Proxy-KMS-EcrRepoTest"
+                    }
+                  ]
+                ]
+              }
+            },
+            {
+              "Action": "ecr:GetAuthorizationToken",
+              "Effect": "Allow",
+              "Resource": "*"
+            },
+            {
+              "Action": [
+                "logs:CreateLogStream",
+                "logs:PutLogEvents"
+              ],
+              "Effect": "Allow",
+              "Resource": {
+                "Fn::GetAtt": [
+                  "ClusterTestServiceTaskDefPixProxyTestLogGroup0B252625",
+                  "Arn"
+                ]
+              }
+            }
+          ],
+          "Version": "2012-10-17"
+        },
+        "PolicyName": "ClusterTestServiceTaskDefExecutionRoleDefaultPolicy2AB89D66",
+        "Roles": [
+          {
+            "Ref": "ClusterTestServiceTaskDefExecutionRole2E8E1E99"
+          }
+        ]
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/TaskDef/ExecutionRole/DefaultPolicy/Resource"
+      }
+    },
+    "ClusterTestService9796E7ED": {
+      "Type": "AWS::ECS::Service",
+      "Properties": {
+        "Cluster": {
+          "Ref": "ClusterTestEcsTestCluster397953A3"
+        },
+        "DeploymentConfiguration": {
+          "MaximumPercent": 200,
+          "MinimumHealthyPercent": 50
+        },
+        "DesiredCount": 1,
+        "EnableECSManagedTags": false,
+        "HealthCheckGracePeriodSeconds": 60,
+        "LaunchType": "FARGATE",
+        "LoadBalancers": [
+          {
+            "ContainerName": "Pix-Proxy-Test",
+            "ContainerPort": 8181,
+            "TargetGroupArn": {
+              "Ref": "ClusterTestServicePixProxyTestNLBDictListenerTestECSTargetGroupPixProxyTest8181Group6C23ABE8"
+            }
+          },
+          {
+            "ContainerName": "Pix-Proxy-Test",
+            "ContainerPort": 9191,
+            "TargetGroupArn": {
+              "Ref": "ClusterTestServicePixProxyTestNLBSpiListenerTestECSTargetGroupPixProxyTest9191Group244A33F6"
+            }
+          }
+        ],
+        "NetworkConfiguration": {
+          "AwsvpcConfiguration": {
+            "AssignPublicIp": "DISABLED",
+            "SecurityGroups": [
+              {
+                "Fn::GetAtt": [
+                  "ClusterTestServiceSecurityGroup3DF24986",
+                  "GroupId"
+                ]
+              }
+            ],
+            "Subnets": {
+              "Fn::Split": [
+                ",",
+                {
+                  "Fn::ImportValue": "Pix-Proxy-KMS-VpcPrivateSubnetIds"
+                }
+              ]
+            }
+          }
+        },
+        "TaskDefinition": {
+          "Ref": "ClusterTestServiceTaskDef906B3F8B"
+        }
+      },
+      "DependsOn": [
+        "ClusterTestServicePixProxyTestNLBDictListenerTestECSTargetGroupPixProxyTest8181Group6C23ABE8",
+        "ClusterTestServicePixProxyTestNLBDictListenerTest1727E29A",
+        "ClusterTestServicePixProxyTestNLBSpiListenerTestECSTargetGroupPixProxyTest9191Group244A33F6",
+        "ClusterTestServicePixProxyTestNLBSpiListenerTestBCEF51EB"
+      ],
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Service/Service"
+      }
+    },
+    "ClusterTestServiceSecurityGroup3DF24986": {
+      "Type": "AWS::EC2::SecurityGroup",
+      "Properties": {
+        "GroupDescription": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Service/SecurityGroup",
+        "SecurityGroupEgress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "Allow all outbound traffic by default",
+            "IpProtocol": "-1"
+          }
+        ],
+        "SecurityGroupIngress": [
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:8181",
+            "FromPort": 8181,
+            "IpProtocol": "tcp",
+            "ToPort": 8181
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:9191",
+            "FromPort": 9191,
+            "IpProtocol": "tcp",
+            "ToPort": 9191
+          },
+          {
+            "CidrIp": "0.0.0.0/0",
+            "Description": "from 0.0.0.0/0:7171",
+            "FromPort": 7171,
+            "IpProtocol": "tcp",
+            "ToPort": 7171
+          }
+        ],
+        "VpcId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-VpcId"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Service/SecurityGroup/Resource"
+      }
+    },
+    "ClusterTestServiceTaskCountTarget971369EA": {
+      "Type": "AWS::ApplicationAutoScaling::ScalableTarget",
+      "Properties": {
+        "MaxCapacity": 10,
+        "MinCapacity": 2,
+        "ResourceId": {
+          "Fn::Join": [
+            "",
+            [
+              "service/",
+              {
+                "Ref": "ClusterTestEcsTestCluster397953A3"
+              },
+              "/",
+              {
+                "Fn::GetAtt": [
+                  "ClusterTestService9796E7ED",
+                  "Name"
+                ]
+              }
+            ]
+          ]
+        },
+        "RoleARN": {
+          "Fn::Join": [
+            "",
+            [
+              "arn:",
+              {
+                "Ref": "AWS::Partition"
+              },
+              ":iam::",
+              {
+                "Ref": "AWS::AccountId"
+              },
+              ":role/aws-service-role/ecs.application-autoscaling.amazonaws.com/AWSServiceRoleForApplicationAutoScaling_ECSService"
+            ]
+          ]
+        },
+        "ScalableDimension": "ecs:service:DesiredCount",
+        "ServiceNamespace": "ecs"
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Service/TaskCount/Target/Resource"
+      }
+    },
+    "ClusterTestServiceTaskCountTargetServiceTestCpuScalingFC6AFDF7": {
+      "Type": "AWS::ApplicationAutoScaling::ScalingPolicy",
+      "Properties": {
+        "PolicyName": "PixProxyKMSLambdaClusterTestServiceTaskCountTargetServiceTestCpuScaling6A89E745",
+        "PolicyType": "TargetTrackingScaling",
+        "ScalingTargetId": {
+          "Ref": "ClusterTestServiceTaskCountTarget971369EA"
+        },
+        "TargetTrackingScalingPolicyConfiguration": {
+          "PredefinedMetricSpecification": {
+            "PredefinedMetricType": "ECSServiceAverageCPUUtilization"
+          },
+          "ScaleInCooldown": 60,
+          "ScaleOutCooldown": 60,
+          "TargetValue": 50
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/Service/Service/TaskCount/Target/ServiceTestCpuScaling/Resource"
+      }
+    },
+    "ClusterTestTestRecord4F6ACAC3": {
+      "Type": "AWS::Route53::RecordSet",
+      "Properties": {
+        "Name": "test.pi.rsfn.net.br.",
+        "Type": "A",
+        "AliasTarget": {
+          "DNSName": {
+            "Fn::Join": [
+              "",
+              [
+                "dualstack.",
+                {
+                  "Fn::GetAtt": [
+                    "ClusterTestServicePixProxyTestNLBD1F14DCC",
+                    "DNSName"
+                  ]
+                }
+              ]
+            ]
+          },
+          "HostedZoneId": {
+            "Fn::GetAtt": [
+              "ClusterTestServicePixProxyTestNLBD1F14DCC",
+              "CanonicalHostedZoneID"
+            ]
+          }
+        },
+        "HostedZoneId": {
+          "Fn::ImportValue": "Pix-Proxy-KMS-RsfnZone"
+        }
+      },
+      "Metadata": {
+        "aws:cdk:path": "Pix-Proxy-KMS-Lambda/ClusterTest/TestRecord/Resource"
+      }
+    }
+  },
+  "Parameters": {
+    "ProxySpiLambdaLambdaSourceBucketNameParameter977E85B7": {
+      "Type": "String"
+    },
+    "ProxySpiLambdaLambdaSourceObjectKeyParameterC7492CB5": {
+      "Type": "String"
+    },
+    "ProxySpiAuditStreamParameter6B2B0756": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "/pix/proxy/kms/SpiAuditStream"
+    },
+    "ProxySpiSignatureKeyIdParameter3A820E70": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "SignatureKeyId"
+    },
+    "ProxyDictAuditStreamParameterFBFFF1DC": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "/pix/proxy/kms/DictAuditStream"
+    },
+    "ProxyDictSignatureKeyIdParameter0482F1D8": {
+      "Type": "AWS::SSM::Parameter::Value<String>",
+      "Default": "SignatureKeyId"
+    }
+  },
+  "Outputs": {
+    "ProxyspiApiEndpoint4F4F640A": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "ProxyspiApi2B68DB12"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix"
+            },
+            "/",
+            {
+              "Ref": "ProxyspiApiDeploymentStageprodFF80ED60"
+            },
+            "/"
+          ]
+        ]
+      }
+    },
+    "spiApiUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "ProxyspiApi2B68DB12"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix"
+            },
+            "/",
+            {
+              "Ref": "ProxyspiApiDeploymentStageprodFF80ED60"
+            },
+            "/"
+          ]
+        ]
+      }
+    },
+    "ProxydictApiEndpoint2FE406A8": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "ProxydictApi9496AE01"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix"
+            },
+            "/",
+            {
+              "Ref": "ProxydictApiDeploymentStageprodE56A4A6B"
+            },
+            "/"
+          ]
+        ]
+      }
+    },
+    "dictApiUrl": {
+      "Value": {
+        "Fn::Join": [
+          "",
+          [
+            "https://",
+            {
+              "Ref": "ProxydictApi9496AE01"
+            },
+            ".execute-api.",
+            {
+              "Ref": "AWS::Region"
+            },
+            ".",
+            {
+              "Ref": "AWS::URLSuffix"
+            },
+            "/",
+            {
+              "Ref": "ProxydictApiDeploymentStageprodE56A4A6B"
+            },
+            "/"
+          ]
+        ]
+      }
+    },
+    "EcsTestClusterARN": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ClusterTestEcsTestCluster397953A3",
+          "Arn"
+        ]
+      }
+    },
+    "ClusterTestServiceLoadBalancerDNSPixProxyTestNLB9206AABA": {
+      "Value": {
+        "Fn::GetAtt": [
+          "ClusterTestServicePixProxyTestNLBD1F14DCC",
+          "DNSName"
+        ]
+      }
+    }
+  }
+}
