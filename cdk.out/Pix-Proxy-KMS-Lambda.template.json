@@ -240,7 +240,7 @@
                 "Fn::Join": [
                   "",
                   [
-                    "arn:aws:firehose:",
+                    "arn:aws:kms:",
                     {
                       "Ref": "AWS::Region"
                     },
@@ -349,9 +349,6 @@
     "ProxyspiApi2B68DB12": {
       "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
-        "BinaryMediaTypes": [
-          "application/xml"
-        ],
         "EndpointConfiguration": {
           "Types": [
             "PRIVATE"
@@ -443,7 +440,7 @@
         "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/spiApi/Account"
       }
     },
-    "ProxyspiApiDeployment2698923Dba94c921c40e376949c70a3844cc1f89": {
+    "ProxyspiApiDeployment2698923Dc2a61d052bb78d2e24d23c10b52c568d": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -467,7 +464,7 @@
           "Ref": "ProxyspiApi2B68DB12"
         },
         "DeploymentId": {
-          "Ref": "ProxyspiApiDeployment2698923Dba94c921c40e376949c70a3844cc1f89"
+          "Ref": "ProxyspiApiDeployment2698923Dc2a61d052bb78d2e24d23c10b52c568d"
         },
         "StageName": "prod"
       },
@@ -908,7 +905,7 @@
                 "Fn::Join": [
                   "",
                   [
-                    "arn:aws:firehose:",
+                    "arn:aws:kms:",
                     {
                       "Ref": "AWS::Region"
                     },
@@ -1017,9 +1014,6 @@
     "ProxydictApi9496AE01": {
       "Type": "AWS::ApiGateway::RestApi",
       "Properties": {
-        "BinaryMediaTypes": [
-          "application/xml"
-        ],
         "EndpointConfiguration": {
           "Types": [
             "PRIVATE"
@@ -1111,7 +1105,7 @@
         "aws:cdk:path": "Pix-Proxy-KMS-Lambda/Proxy/dictApi/Account"
       }
     },
-    "ProxydictApiDeploymentF9AA587Ee4a29715d046a83ab3259fa81fcacb82": {
+    "ProxydictApiDeploymentF9AA587E7af65ac83254b05bb1afee10224afa54": {
       "Type": "AWS::ApiGateway::Deployment",
       "Properties": {
         "RestApiId": {
@@ -1135,7 +1129,7 @@
           "Ref": "ProxydictApi9496AE01"
         },
         "DeploymentId": {
-          "Ref": "ProxydictApiDeploymentF9AA587Ee4a29715d046a83ab3259fa81fcacb82"
+          "Ref": "ProxydictApiDeploymentF9AA587E7af65ac83254b05bb1afee10224afa54"
         },
         "StageName": "prod"
       },

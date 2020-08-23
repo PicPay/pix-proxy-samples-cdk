@@ -127,7 +127,7 @@ export class Proxy extends cdk.Construct {
         func.addToRolePolicy(new iam.PolicyStatement({
             effect: iam.Effect.ALLOW,
             resources: [
-                `arn:aws:firehose:${this.props.region}:${this.props.account}:key/${signatureKeyId.stringValue}`
+                `arn:aws:kms:${this.props.region}:${this.props.account}:key/${signatureKeyId.stringValue}`
             ],
             actions: [
                 "kms:GetPublicKey",
@@ -146,7 +146,6 @@ export class Proxy extends cdk.Construct {
                 types: [apigateway.EndpointType.PRIVATE],
                 vpcEndpoints: [this.vpcEndpoint]
             },
-            binaryMediaTypes: ["application/xml"],
             policy: new iam.PolicyDocument({
                 statements: [
                     new iam.PolicyStatement({
