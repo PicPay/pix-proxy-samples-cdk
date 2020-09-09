@@ -2418,8 +2418,8 @@
                   "Version": "1"
                 },
                 "Configuration": {
-                  "Owner": "llins",
-                  "Repo": "pix-proxy-samples-private",
+                  "Owner": "aws-samples",
+                  "Repo": "pix-proxy-samples",
                   "Branch": "master",
                   "OAuthToken": {
                     "Fn::Join": [

@@ -19,8 +19,8 @@ export class Pipeline extends cdk.Construct {
 
     private readonly props: PipelineProps;
 
-    private readonly gitHubOwner: string = 'llins';
-    private readonly gitHubRepo: string = 'pix-proxy-samples-private';
+    private readonly gitHubOwner: string = 'aws-samples';
+    private readonly gitHubRepo: string = 'pix-proxy-samples';
 
     private readonly gitHubKmsJceOwner: string = 'aws-samples';
     private readonly gitHubKmsJceRepo: string = 'aws-kms-jce';
